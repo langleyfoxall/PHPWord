@@ -741,7 +741,7 @@ class TemplateProcessor
             $this->tempDocumentMainPart,
             $matches
         );
-
+        
         if (isset($matches[3])) {
             $xmlBlock = $matches[3];
             if ($indexVariables) {
@@ -762,10 +762,46 @@ class TemplateProcessor
                     $this->tempDocumentMainPart
                 );
             }
-        }
+        } else { error_log("CLONE BLOCK CALLED, NO MATCHES! Block Name '{$blockname}' not found \n"); }
 
         return $xmlBlock;
     }
+    
+    /**
+     * Execute a function on a block
+     *
+     * @param string $fullText The text to operate on
+     * @param string $blockName The name of the block (macro)
+     * @param function $callback The function to execute
+     * @param integer $startAt Offset
+     * @return string
+     */
+    static function extractBlock($fullText,$blockName,$callback,$startAt=0) {
+        $startPos = strpos($fullText, '${'.$blockName.'}', $startAt);
+        if ($startPos!==false) {
+            $endPos = strpos($fullText, '${/'.$blockName.'}', $startAt);
+            if ($endPos!==false) {
+                $startEnd = $startPos+ strlen($blockName) + 3;
+                $endEnd = $endPos+ strlen($blockName) + 4;
+                $preText = substr($fullText, 0, $startPos);
+                $postText = substr($fullText, $endPos + strlen($blockName) + 4);
+                $len = strlen($fullText) - strlen($preText) - strlen($postText) - (strlen($blockName)*2) - 7;
+                $text = substr($fullText, $startEnd, $len);
+
+                return [$preText . $callback($text) . $postText, true];
+            }
+        }
+        return [$fullText,false];
+    }
+
+    public function blockLambda($blockName,$callback) {
+        do {
+            list($this->tempDocumentMainPart,$replacementMade) = self::extractBlock($this->tempDocumentMainPart, $blockName, $callback);
+        } while ($replacementMade);
+    }
+
+
+
 
     /**
      * Replace a block.
@@ -1249,4 +1285,5 @@ class TemplateProcessor
     {
         return preg_match('/[^>]\${|}[^<]/i', $text) == 1;
     }
+
 }
