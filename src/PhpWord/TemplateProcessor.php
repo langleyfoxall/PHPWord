@@ -1347,4 +1347,29 @@ class TemplateProcessor
         return preg_match('/[^>]\${|}[^<]/i', $text) == 1;
     }
 
+
+    /**
+     * This function forcibly adds an image to the main document.
+     *
+     * This is used as a hack/workaround when using setComplexValue, so that images included
+     * as a part of this are also added to the document's assets and relations.
+     *
+     * This should not be necessary, and it will only work where you have the image you are inserting
+     *
+     * @param PHPWord\Element\Image $image
+     * @param string $url The url of the image you're inserting
+     */
+    function relateImage($image, $url) {
+        $partFileName = $this->getMainPartName();
+        $rid="rId".$this->getNextRelationsIndex($partFileName);
+        
+        $this->addImageToRelations(
+            $partFileName,
+            $rid,
+            $url,
+            $image->getImageType()
+        );
+    }
+
+
 }
